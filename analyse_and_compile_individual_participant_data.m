@@ -1,7 +1,7 @@
 clear all
 
 % vector of subject numbers
-subject = [802];
+subject = [802, 803, 804];
 % main file name
 file_name = "Version7_10Rules_deploy";
 % USB drive name
