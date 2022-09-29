@@ -737,7 +737,7 @@ for n = 1:data.num_cues;
         b = rand(1);
         % look at the first trial, as this is pure chance
         if m == 1;
-            if b > 100 - (100 ./ (data.num_targets - (m - 1)));
+            if b > (100 - (100 ./ (data.num_targets - (m - 1)))) ./ 100;
                 cond.x.(a)(m,10) = 1;
                 cond.c.(a)(m,10) = 1;
             else
@@ -759,7 +759,7 @@ for n = 1:data.num_cues;
                 % not the far right and middle. Also over trials the number
                 % of other bits of information in other trials increases,
                 % altering the difficulty).
-                if b > (100 - (100 ./ (data.num_targets - (m - 1)))) + (2.5 .* m);
+                if b > ((100 - (100 ./ (data.num_targets - (m - 1)))) + (2.5 .* m)) ./ 100;
                     cond.x.(a)(m,10) = 1;
                     cond.c.(a)(m,10) = 1;
                 else
@@ -1657,7 +1657,7 @@ while cond.max_correlate_all > data.rep_thresh;
             b = rand(1);
             % look at the first trial, as this is pure chance
             if m == 1;
-                if b > 100 - (100 ./ (data.num_targets - (m - 1)));
+                if b > (100 - (100 ./ (data.num_targets - (m - 1)))) ./ 100;
                     cond.x.(a)(m,10) = 1;
                     cond.c.(a)(m,10) = 1;
                 else
@@ -1679,7 +1679,7 @@ while cond.max_correlate_all > data.rep_thresh;
                     % not the far right and middle. Also over trials the number
                     % of other bits of information in other trials increases,
                     % altering the difficulty).
-                    if b > (100 - (100 ./ (data.num_targets - (m - 1)))) + (2.5 .* m);
+                    if b > ((100 - (100 ./ (data.num_targets - (m - 1)))) + (2.5 .* m)) ./ 100;
                         cond.x.(a)(m,10) = 1;
                         cond.c.(a)(m,10) = 1;
                     else
