@@ -1,0 +1,754 @@
+clear all
+% load the variables of interest
+x = 50.96;
+y = -1.73;
+z = -39.68;
+
+% set whether it is a peak (1) or a subjective peak (2)
+clear peak
+peak = 1;
+
+% set the participant number
+clear sub
+sub = 809;
+
+% load up the main files if needed
+try 
+    max(max(max(intAll)));
+catch
+    % addpath /usr/local/apps/psycapps/spm/spm12-r7487;
+    
+    
+    % check the bfs
+    cd(strcat('C:/Study_4/',num2str(sub),'/1st_level/individual/analysis'));
+    load('SPM.mat');
+    % set the window length and work out how many arbitrary units equate to 1
+    % second
+    window = SPM.xBF.length;
+    sec = length(SPM.xBF.bf(:,1)) ./ window;
+    % isolate the basis functions
+    hrf = SPM.xBF.bf;
+    clear SPM
+
+  
+    %%%%%% UPDATE %%%%%%
+    % ORIGINAL
+    
+    % Interactions
+
+
+    %%% CUE %%%
+
+    % interaction condition x error status
+    intAll = niftiread(strcat('cueerrXcond.nii'));
+    
+    % Main effects
+    % effect condition in correct trials
+    mec_cor = niftiread(strcat('cueconeff_cor.nii'));
+    % effect condition in incorrect trials
+    mec_inc = niftiread(strcat('cueconeff_inc.nii'));
+    % effect error status in exprimental trials
+    mee_X = niftiread(strcat('cuecoreff_x.nii'));
+    % effect error status in control trials
+    mee_C = niftiread(strcat('cuecoreff_c.nii'));
+    
+    % Single effects
+    X_cor = niftiread(strcat('cuecor_x.nii'));
+    C_cor = niftiread(strcat('cuecor_c.nii'));
+    X_incor = niftiread(strcat('cueinc_x.nii'));
+    C_incor = niftiread(strcat('cueinc_c.nii'));
+      
+    
+    % load the con images for correct X
+    Xcor.one = spm_vol('beta_0001.nii');
+    [Xcora,XcorXYZ1]=spm_read_vols(Xcor.one);
+    Xcor.two = spm_vol('beta_0002.nii');
+    [Xcorb,XcorXYZ2]=spm_read_vols(Xcor.two);
+    Xcor.thr = spm_vol('beta_0003.nii');
+    [Xcorc,XcorXYZ3]=spm_read_vols(Xcor.thr);;
+
+    % load the con images for correct C
+    Ccor.one = spm_vol('beta_0004.nii');
+    [Ccora,CcorXYZ1]=spm_read_vols(Ccor.one);
+    Ccor.two = spm_vol('beta_0005.nii');
+    [Ccorb,CcorXYZ2]=spm_read_vols(Ccor.two);
+    Ccor.thr = spm_vol('beta_0006.nii');
+    [Ccorc,CcorXYZ3]=spm_read_vols(Ccor.thr);
+    
+    % load the con images for incorrect X
+    Xincor.one = spm_vol('beta_0007.nii');
+    [Xincora,XincorXYZ1]=spm_read_vols(Xincor.one);
+    Xincor.two = spm_vol('beta_0008.nii');
+    [Xincorb,XincorXYZ2]=spm_read_vols(Xincor.two);
+    Xincor.thr = spm_vol('beta_0009.nii');
+    [Xincorc,XincorXYZ3]=spm_read_vols(Xincor.thr);
+    
+    % load the con images for incorrect C
+    Cincor.one = spm_vol('beta_0010.nii');
+    [Cincora,CincorXYZ1]=spm_read_vols(Cincor.one);
+    Cincor.two = spm_vol('beta_0011.nii');
+    [Cincorb,CincorXYZ2]=spm_read_vols(Cincor.two);
+    Cincor.thr = spm_vol('beta_0012.nii');
+    [Cincorc,CincorXYZ3]=spm_read_vols(Cincor.thr);
+
+
+
+    %%% FEEDBACK %%%
+    % interaction condition x error status
+    fintAll = niftiread(strcat('feederrXcond.nii'));
+    
+    % Main effects
+    % effect condition in correct trials
+    fmec_cor = niftiread(strcat('feedconeff_cor.nii'));
+    % effect condition in incorrect trials
+    fmec_inc = niftiread(strcat('feedconeff_inc.nii'));
+    % effect error status in exprimental trials
+    fmee_X = niftiread(strcat('feedcoreff_x.nii'));
+    % effect error status in control trials
+    fmee_C = niftiread(strcat('feedcoreff_c.nii'));
+    
+    % Single effects
+    fX_cor = niftiread(strcat('feedcor_x.nii'));
+    fC_cor = niftiread(strcat('feedcor_c.nii'));
+    fX_incor = niftiread(strcat('feedinc_x.nii'));
+    fC_incor = niftiread(strcat('feedinc_c.nii'));
+      
+    
+    % load the con images for correct X
+    fXcor.one = spm_vol('beta_0028.nii');
+    [fXcora,fXcorXYZ1]=spm_read_vols(fXcor.one);
+    fXcor.two = spm_vol('beta_0029.nii');
+    [fXcorb,fXcorXYZ2]=spm_read_vols(fXcor.two);
+    fXcor.thr = spm_vol('beta_0030.nii');
+    [fXcorc,fXcorXYZ3]=spm_read_vols(fXcor.thr);;
+
+    % load the con images for correct C
+    fCcor.one = spm_vol('beta_0031.nii');
+    [fCcora,fCcorXYZ1]=spm_read_vols(fCcor.one);
+    fCcor.two = spm_vol('beta_0032.nii');
+    [fCcorb,fCcorXYZ2]=spm_read_vols(fCcor.two);
+    fCcor.thr = spm_vol('beta_0033.nii');
+    [fCcorc,fCcorXYZ3]=spm_read_vols(fCcor.thr);
+    
+    % load the con images for incorrect X
+    fXincor.one = spm_vol('beta_0034.nii');
+    [fXincora,fXincorXYZ1]=spm_read_vols(fXincor.one);
+    fXincor.two = spm_vol('beta_0035.nii');
+    [fXincorb,fXincorXYZ2]=spm_read_vols(fXincor.two);
+    fXincor.thr = spm_vol('beta_0036.nii');
+    [fXincorc,fXincorXYZ3]=spm_read_vols(fXincor.thr);
+    
+    % load the con images for incorrect C
+    fCincor.one = spm_vol('beta_0037.nii');
+    [fCincora,fCincorXYZ1]=spm_read_vols(fCincor.one);
+    fCincor.two = spm_vol('beta_0038.nii');
+    [fCincorb,fCincorXYZ2]=spm_read_vols(fCincor.two);
+    fCincor.thr = spm_vol('beta_0039.nii');
+    [fCincorc,fCincorXYZ3]=spm_read_vols(fCincor.thr);
+    
+        
+
+    %%% CUE & FEEDBACK %%%
+    % interaction event x condition x error status
+    comb_int = niftiread(strcat('comb_int.nii'));
+    
+    % sub interactions
+    % condition x event correct
+    comb_cor = niftiread(strcat('comb_cor.nii'));
+    % condition x event incorrect
+    comb_incor = niftiread(strcat('comb_inc.nii'));
+        
+    % Contrasts
+    comb_Xcor = niftiread(strcat('comb_Xcor.nii'));
+    comb_Ccor = niftiread(strcat('comb_Ccor.nii'));
+    comb_Xincor = niftiread(strcat('comb_Xinc.nii'));
+    comb_Cincor = niftiread(strcat('comb_Cinc.nii'));
+
+
+    % load the con images for baseline
+    base.one = spm_vol('con_0043.nii');
+    [basea,baseXYZ1]=spm_read_vols(base.one);
+    
+    mkdir output
+    cd('output');
+end
+
+
+% find the coordinate of interest
+if peak == 1;
+    clear coord
+    coord = find(CincorXYZ1(1,:) > x - 0.01 & CincorXYZ1(1,:) < x + 0.01...
+        & CincorXYZ1(2,:) > y - 0.01 & CincorXYZ1(2,:) < y + 0.01...
+        & CincorXYZ1(3,:) > z - 0.01 & CincorXYZ1(3,:) < z + 0.01);
+elseif peak == 2;
+    clear coord
+    coord = find(CincorXYZ1(1,:) > x - 0.5 & CincorXYZ1(1,:) < x + 0.5...
+        & CincorXYZ1(2,:) > y - 0.5 & CincorXYZ1(2,:) < y + 0.5...
+        & CincorXYZ1(3,:) > z - 0.5 & CincorXYZ1(3,:) < z + 0.5);
+    
+    % set the coordinates appropriately
+    x = round(CincorXYZ1(1,coord),2);
+    y = round(CincorXYZ1(2,coord),2);
+    z = round(CincorXYZ1(3,coord),2);
+end
+
+if length(coord) > 1;
+    "ERROR"
+end
+
+% check if cue contrasts are significant
+clear sig
+if intAll(coord) > 0;
+    sig.int = 1
+else sig.int = 0;
+end
+if mec_cor(coord) > 0;
+    sig.mec_cor = 1
+else sig.mec_cor = 0;
+end
+if mec_inc(coord) > 0;
+    sig.mec_inc = 1
+else sig.mec_inc = 0;
+end
+if mee_X(coord) > 0;
+    sig.mee_X = 1
+else sig.mee_X = 0;
+end
+if mee_C(coord) > 0;
+    sig.mee_C = 1
+else sig.mee_C = 0;
+end
+if X_cor(coord) > 0;
+    sig.X_cor = 1
+else sig.X_cor = 0;
+end
+if C_cor(coord) > 0;
+    sig.C_cor = 1
+else sig.C_cor = 0;
+end
+if X_incor(coord) > 0;
+    sig.X_incor = 1
+else sig.X_incor = 0;
+end
+if C_incor(coord) > 0;
+    sig.C_incor = 1
+else sig.C_incor = 0;
+end
+
+
+% check if feedback contrasts are significant
+clear fsig
+if fintAll(coord) > 0;
+    fsig.int = 1
+else fsig.int = 0;
+end
+if fmec_cor(coord) > 0;
+    fsig.mec_cor = 1
+else fsig.mec_cor = 0;
+end
+if fmec_inc(coord) > 0;
+    fsig.mec_inc = 1
+else fsig.mec_inc = 0;
+end
+if fmee_X(coord) > 0;
+    fsig.mee_X = 1
+else fsig.mee_X = 0;
+end
+if fmee_C(coord) > 0;
+    fsig.mee_C = 1
+else fsig.mee_C = 0;
+end
+if fX_cor(coord) > 0;
+    fsig.X_cor = 1
+else fsig.X_cor = 0;
+end
+if fC_cor(coord) > 0;
+    fsig.C_cor = 1
+else fsig.C_cor = 0;
+end
+if fX_incor(coord) > 0;
+    fsig.X_incor = 1
+else fsig.X_incor = 0;
+end
+if fC_incor(coord) > 0;
+    fsig.C_incor = 1
+else fsig.C_incor = 0;
+end
+
+
+% COMBINATION
+
+% check if feedback contrasts are significant
+clear csig
+if comb_int(coord) > 0;
+    csig.comb_int = 1
+else csig.comb_int = 0;
+end
+if comb_cor(coord) > 0;
+    csig.comb_cor = 1
+else csig.comb_cor = 0;
+end
+if comb_incor(coord) > 0;
+    csig.comb_incor = 1
+else csig.comb_incor = 0;
+end
+if comb_Xcor(coord) > 0;
+    csig.comb_Xcor = 1
+else csig.comb_Xcor = 0;
+end
+if comb_Ccor(coord) > 0;
+    csig.comb_Ccor = 1
+else csig.comb_Ccor = 0;
+end
+if comb_Xincor(coord) > 0;
+    csig.comb_Xincor = 1
+else csig.comb_Xincor = 0;
+end
+if comb_Cincor(coord) > 0;
+    csig.comb_Cincor = 1
+else csig.comb_Cincor = 0;
+end
+
+
+
+% CUE
+clear full
+clear output
+output(:,1) = hrf(:,1) .* Xcora(coord);
+output(:,2) = hrf(:,2) .* Xcorb(coord);
+output(:,3) = hrf(:,3) .* Xcorc(coord);
+full(:,1) = output(:,1) + output(:,2) + output(:,3);
+clear output
+output(:,1) = hrf(:,1) .* Ccora(coord);
+output(:,2) = hrf(:,2) .* Ccorb(coord);
+output(:,3) = hrf(:,3) .* Ccorc(coord);
+full(:,2) = output(:,1) + output(:,2) + output(:,3);
+clear output
+output(:,1) = hrf(:,1) .* Xincora(coord);
+output(:,2) = hrf(:,2) .* Xincorb(coord);
+output(:,3) = hrf(:,3) .* Xincorc(coord);
+full(:,3) = output(:,1) + output(:,2) + output(:,3);
+clear output
+output(:,1) = hrf(:,1) .* Cincora(coord);
+output(:,2) = hrf(:,2) .* Cincorb(coord);
+output(:,3) = hrf(:,3) .* Cincorc(coord);
+full(:,4) = output(:,1) + output(:,2) + output(:,3);
+
+% FEEDBACK
+clear output
+output(:,1) = hrf(:,1) .* fXcora(coord);
+output(:,2) = hrf(:,2) .* fXcorb(coord);
+output(:,3) = hrf(:,3) .* fXcorc(coord);
+full(:,5) = output(:,1) + output(:,2) + output(:,3);
+clear output
+output(:,1) = hrf(:,1) .* fCcora(coord);
+output(:,2) = hrf(:,2) .* fCcorb(coord);
+output(:,3) = hrf(:,3) .* fCcorc(coord);
+full(:,6) = output(:,1) + output(:,2) + output(:,3);
+clear output
+output(:,1) = hrf(:,1) .* fXincora(coord);
+output(:,2) = hrf(:,2) .* fXincorb(coord);
+output(:,3) = hrf(:,3) .* fXincorc(coord);
+full(:,7) = output(:,1) + output(:,2) + output(:,3);
+clear output
+output(:,1) = hrf(:,1) .* fCincora(coord);
+output(:,2) = hrf(:,2) .* fCincorb(coord);
+output(:,3) = hrf(:,3) .* fCincorc(coord);
+full(:,8) = output(:,1) + output(:,2) + output(:,3);
+
+% convert to percentage signal change
+clear n
+for n = 1:8;
+    full(:,n) = (full(:,n) ./ basea(coord)) .* 100;
+end
+
+clear maxi
+maxi(1) = max(max(full)) + (abs(max(max(full))) ./ 10);
+maxi(2) = min(min(full)) - (abs(min(min(full))) ./ 10);
+% cue specific
+maxi(3) = max(max(full(:,1:4))) + (abs(max(max(full(:,1:4)))) ./ 10);
+maxi(4) = min(min(full(:,1:4))) - (abs(min(min(full(:,1:4)))) ./ 10);
+% feed specific
+maxi(5) = max(max(full(:,5:8))) + (abs(max(max(full(:,5:8)))) ./ 10);
+maxi(6) = min(min(full(:,5:8))) - (abs(min(min(full(:,5:8)))) ./ 10);
+
+clear amplitudes
+% save peak amplitudes
+for n = 1:8;
+    amplitudes(n) = max(abs(full(:,n)));
+end
+
+a = figure(1);
+set(gcf,'Position',[60 60 1600 800]);
+subplot(2,2,1);
+plot(full(:,1),'LineWidth',3);
+hold on
+plot(full(:,3),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(2) maxi(1)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+if sig.mec_cor == 1 & sig.mee_X == 1;
+    legend('Correct Experimental: effect of condition sig (correct trials)','Incorrect Experimental: effect of error status sig (experimental)');
+elseif sig.mec_cor == 1 & sig.mee_X == 0;
+    legend('Correct Experimental: effect of condition sig (correct trials)','Incorrect Experimental: effect of error status NS (experimental)');
+elseif sig.mec_cor == 0 & sig.mee_X == 1;
+    legend('Correct Experimental: effect of condition NS (correct trials)','Incorrect Experimental: effect of error status sig (experimental)');
+elseif sig.mec_cor == 0 & sig.mee_X == 0;
+    legend('Correct Experimental: effect of condition NS (correct trials)','Incorrect Experimental: effect of error status NS (experimental)');
+end
+title(strcat('Cue: x = ',num2str(x),', y = ',num2str(y),', z = ',num2str(z)));
+hold off
+
+subplot(2,2,2);
+plot(full(:,2),'LineWidth',3);
+hold on
+plot(full(:,4),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(2) maxi(1)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+if sig.mee_C == 1 & sig.mec_inc == 1;
+    legend('Correct Control: effect of error status sig (control)','Incorrect Control: effect of condition sig (incorrect)');
+elseif sig.mee_C == 1 & sig.mec_inc == 0;
+    legend('Correct Control: effect of error status sig (control)','Incorrect Control: effect of condition NS (incorrect)');
+elseif sig.mee_C == 0 & sig.mec_inc == 1;
+    legend('Correct Control: effect of error status NS (control)','Incorrect Control: effect of condition sig (incorrect)');
+elseif sig.mee_C == 0 & sig.mec_inc == 0;
+    legend('Correct Control: effect of error status NS (control)','Incorrect Control: effect of condition NS (incorrect)');
+end
+if sig.int == 1;
+    title('Cue: Significant Interaction');
+else
+    title('Cue: No Interaction');
+end
+
+subplot(2,2,3);
+plot(full(:,5),'LineWidth',3);
+hold on
+plot(full(:,7),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(2) maxi(1)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+if fsig.mec_cor == 1 & fsig.mee_X == 1;
+    legend('Correct Experimental: effect of condition sig (correct trials)','Incorrect Experimental: effect of error status sig (experimental)');
+elseif fsig.mec_cor == 1 & fsig.mee_X == 0;
+    legend('Correct Experimental: effect of condition sig (correct trials)','Incorrect Experimental: effect of error status NS (experimental)');
+elseif fsig.mec_cor == 0 & fsig.mee_X == 1;
+    legend('Correct Experimental: effect of condition NS (correct trials)','Incorrect Experimental: effect of error status sig (experimental)');
+elseif fsig.mec_cor == 0 & fsig.mee_X == 0;
+    legend('Correct Experimental: effect of condition NS (correct trials)','Incorrect Experimental: effect of error status NS (experimental)');
+end
+if csig.comb_int == 1;
+    title('Feedback: event x error status x condition sig');
+else
+    title('Feedback');
+end
+hold off
+
+subplot(2,2,4);
+plot(full(:,6),'LineWidth',3);
+hold on
+plot(full(:,8),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(2) maxi(1)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+if fsig.mee_C == 1 & fsig.mec_inc == 1;
+    legend('Correct Control: effect of error status sig (control)','Incorrect Control: effect of condition sig (incorrect)');
+elseif fsig.mee_C == 1 & fsig.mec_inc == 0;
+    legend('Correct Control: effect of error status sig (control)','Incorrect Control: effect of condition NS (incorrect)');
+elseif fsig.mee_C == 0 & fsig.mec_inc == 1;
+    legend('Correct Control: effect of error status NS (control)','Incorrect Control: effect of condition sig (incorrect)');
+elseif fsig.mee_C == 0 & fsig.mec_inc == 0;
+    legend('Correct Control: effect of error status NS (control)','Incorrect Control: effect of condition NS (incorrect)');
+end
+if fsig.int == 1;
+    title('Feedback: Significant Interaction');
+else
+    title('Feedback: No Interaction');
+end
+fontsize(a,scale=1.2);
+hold off
+
+
+% re run with les info for plots
+aa = figure(2);
+set(gcf,'Position',[60 60 1600 800]);
+subplot(2,2,1);
+plot(full(:,1),'LineWidth',3);
+hold on
+plot(full(:,3),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(2) maxi(1)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+legend('Correct','Incorrect');
+title(strcat('Experimental (CUE): x = ',num2str(x),', y = ',num2str(y),', z = ',num2str(z)));
+hold off
+
+subplot(2,2,2);
+plot(full(:,2),'LineWidth',3);
+hold on
+plot(full(:,4),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(2) maxi(1)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+legend('Correct','Incorrect');
+title('Control (CUE)');
+
+
+subplot(2,2,3);
+plot(full(:,5),'LineWidth',3);
+hold on
+plot(full(:,7),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(2) maxi(1)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+legend('Correct','Incorrect');
+title('Experimental (FEED)');
+hold off
+
+subplot(2,2,4);
+plot(full(:,6),'LineWidth',3);
+hold on
+plot(full(:,8),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(2) maxi(1)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+legend('Correct','Incorrect');
+title('Control (FEED)');
+fontsize(aa,scale=1.2);
+hold off
+
+% separate into cue and feed
+% re run with less info for plots
+aa1 = figure(3);
+set(gcf,'Position',[60 60 1200 500]);
+subplot(1,2,1);
+plot(full(:,1),'LineWidth',3);
+hold on
+plot(full(:,3),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(4) maxi(3)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+legend('Correct','Incorrect');
+title(strcat('Experimental (CUE): x = ',num2str(x),', y = ',num2str(y),', z = ',num2str(z)));
+hold off
+
+subplot(1,2,2);
+plot(full(:,2),'LineWidth',3);
+hold on
+plot(full(:,4),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(4) maxi(3)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+legend('Correct','Incorrect');
+title('Control (CUE)');
+fontsize(aa1,scale=1.2);
+hold off
+
+aa2 = figure(4);
+set(gcf,'Position',[60 60 1200 500]);
+subplot(1,2,1);
+plot(full(:,5),'LineWidth',3);
+hold on
+plot(full(:,7),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(6) maxi(5)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+legend('Correct','Incorrect');
+title('Experimental (FEED)');
+hold off
+
+subplot(1,2,2);
+plot(full(:,6),'LineWidth',3);
+hold on
+plot(full(:,8),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(6) maxi(5)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+legend('Correct','Incorrect');
+title('Control (FEED)');
+fontsize(aa2,scale=1.2);
+hold off
+
+% save as a table
+amplitudes = array2table(amplitudes, ...
+    'VariableNames',{'Cue_X_cor','Cue_C_cor','Cue_X_incor','Cue_C_incor','Feed_X_cor','Feed_C_cor','Feed_X_incor','Feed_C_incor'});
+
+% effects
+effects(1,1) = sig.X_cor;
+effects(1,2) = sig.C_cor;
+effects(1,3) = sig.X_incor;
+effects(1,4) = sig.C_incor;
+effects(1,5) = fsig.X_cor;
+effects(1,6) = fsig.C_cor;
+effects(1,7) = fsig.X_incor;
+effects(1,8) = fsig.C_incor;
+
+clear n
+for n = 1:8;
+    effects(2,n) = max(full(:,n));
+    effects(3,n) = min(full(:,n));
+end
+clear n
+effects(4,1) = x;
+effects(4,2) = y;
+effects(4,3) = z;
+
+% save as a table
+effects_table = array2table(effects, ...
+    'VariableNames',{'CueXcor','CueCcor','CueXincor','CueCincor','FeedXcor','FeedCcor','FeedXincor','FeedCincor'}, ...
+    'RowNames',{'Significance','Max','Min','Coordinates'});
+
+% also save betas
+% also save betas
+beta_t(1,1) = Xcora(coord);
+beta_t(2,1) = Xcorb(coord);
+beta_t(3,1) = Xcorc(coord);
+beta_t(4,1) = abs(beta_t(1,1)) ./ (abs(beta_t(1,1)) + abs(beta_t(2,1)) + abs(beta_t(3,1)));
+beta_t(5,1) = abs(beta_t(2,1)) ./ (abs(beta_t(1,1)) + abs(beta_t(2,1)) + abs(beta_t(3,1)));
+beta_t(6,1) = abs(beta_t(3,1)) ./ (abs(beta_t(1,1)) + abs(beta_t(2,1)) + abs(beta_t(3,1)));
+beta_t(1,2) = Ccora(coord);
+beta_t(2,2) = Ccorb(coord);
+beta_t(3,2) = Ccorc(coord);
+beta_t(4,2) = abs(beta_t(1,2)) ./ (abs(beta_t(1,2)) + abs(beta_t(2,2)) + abs(beta_t(3,2)));
+beta_t(5,2) = abs(beta_t(2,2)) ./ (abs(beta_t(1,2)) + abs(beta_t(2,2)) + abs(beta_t(3,2)));
+beta_t(6,2) = abs(beta_t(3,2)) ./ (abs(beta_t(1,2)) + abs(beta_t(2,2)) + abs(beta_t(3,2)));
+
+beta_t(1,3) = Xincora(coord);
+beta_t(2,3) = Xincorb(coord);
+beta_t(3,3) = Xincorc(coord);
+beta_t(4,3) = abs(beta_t(1,3)) ./ (abs(beta_t(1,3)) + abs(beta_t(2,3)) + abs(beta_t(3,3)));
+beta_t(5,3) = abs(beta_t(2,3)) ./ (abs(beta_t(1,3)) + abs(beta_t(2,3)) + abs(beta_t(3,3)));
+beta_t(6,3) = abs(beta_t(3,3)) ./ (abs(beta_t(1,3)) + abs(beta_t(2,3)) + abs(beta_t(3,3)));
+beta_t(1,4) = Cincora(coord);
+beta_t(2,4) = Cincorb(coord);
+beta_t(3,4) = Cincorc(coord);
+beta_t(4,4) = abs(beta_t(1,4)) ./ (abs(beta_t(1,4)) + abs(beta_t(2,4)) + abs(beta_t(3,4)));
+beta_t(5,4) = abs(beta_t(2,4)) ./ (abs(beta_t(1,4)) + abs(beta_t(2,4)) + abs(beta_t(3,4)));
+beta_t(6,4) = abs(beta_t(3,4)) ./ (abs(beta_t(1,4)) + abs(beta_t(2,4)) + abs(beta_t(3,4)));
+
+% also save betas
+beta_t(1,5) = fXcora(coord);
+beta_t(2,5) = fXcorb(coord);
+beta_t(3,5) = fXcorc(coord);
+beta_t(4,5) = abs(beta_t(1,5)) ./ (abs(beta_t(1,5)) + abs(beta_t(2,5)) + abs(beta_t(3,5)));
+beta_t(5,5) = abs(beta_t(2,5)) ./ (abs(beta_t(1,5)) + abs(beta_t(2,5)) + abs(beta_t(3,5)));
+beta_t(6,5) = abs(beta_t(3,5)) ./ (abs(beta_t(1,5)) + abs(beta_t(2,5)) + abs(beta_t(3,5)));
+beta_t(1,6) = fCcora(coord);
+beta_t(2,6) = fCcorb(coord);
+beta_t(3,6) = fCcorc(coord);
+beta_t(4,6) = abs(beta_t(1,6)) ./ (abs(beta_t(1,6)) + abs(beta_t(2,6)) + abs(beta_t(3,6)));
+beta_t(5,6) = abs(beta_t(2,6)) ./ (abs(beta_t(1,6)) + abs(beta_t(2,6)) + abs(beta_t(3,6)));
+beta_t(6,6) = abs(beta_t(3,6)) ./ (abs(beta_t(1,6)) + abs(beta_t(2,6)) + abs(beta_t(3,6)));
+
+beta_t(1,7) = fXincora(coord);
+beta_t(2,7) = fXincorb(coord);
+beta_t(3,7) = fXincorc(coord);
+beta_t(4,7) = abs(beta_t(1,7)) ./ (abs(beta_t(1,7)) + abs(beta_t(2,7)) + abs(beta_t(3,7)));
+beta_t(5,7) = abs(beta_t(2,7)) ./ (abs(beta_t(1,7)) + abs(beta_t(2,7)) + abs(beta_t(3,7)));
+beta_t(6,7) = abs(beta_t(3,7)) ./ (abs(beta_t(1,7)) + abs(beta_t(2,7)) + abs(beta_t(3,7)));
+beta_t(1,8) = fCincora(coord);
+beta_t(2,8) = fCincorb(coord);
+beta_t(3,8) = fCincorc(coord);
+beta_t(4,8) = abs(beta_t(1,8)) ./ (abs(beta_t(1,8)) + abs(beta_t(2,8)) + abs(beta_t(3,8)));
+beta_t(5,8) = abs(beta_t(2,8)) ./ (abs(beta_t(1,8)) + abs(beta_t(2,8)) + abs(beta_t(3,8)));
+beta_t(6,8) = abs(beta_t(3,8)) ./ (abs(beta_t(1,8)) + abs(beta_t(2,8)) + abs(beta_t(3,8)));
+
+% save as a table
+beta_table = array2table(beta_t, ...
+    'VariableNames',{'CueCorrectX','CueCorrectC','CueIncorrectX','CueIncorrectC','FeedCorrectX','FeedCorrectC','FeedIncorrectX','FeedIncorrectC'}, ...
+    'RowNames',{'1st Canonical','1st Temp_Derv','1st Disp_Derv','1st Can_prop','1st TD_prop','1st DD_prop'});
+
+significance(1,1) = csig.comb_int;
+significance(2,1) = csig.comb_cor;
+significance(3,1) = csig.comb_incor;
+significance(4,1) = csig.comb_Xcor;
+significance(5,1) = csig.comb_Ccor;
+significance(6,1) = csig.comb_Xincor;
+significance(7,1) = csig.comb_Cincor;
+
+sig_table = array2table(significance, ...
+    'VariableNames',{'Significance'}, ...
+    'RowNames',{'event x error x condition','event x condition (correct)','event x condition (incorrect)','event (corX)','event (corC)','event (incorX)','event (incorC)'});
+
+% save the relevant
+mkdir(strcat('coordinate_',num2str(x),'_',num2str(y),'_',num2str(z)));
+cd(strcat('C:/Study_4/',num2str(sub),'/1st_level/individual/analysis/output/coordinate_',num2str(x),'_',num2str(y),'_',num2str(z)));
+save effects_table effects_table
+save beta_table beta_table
+save sig_table sig_table
+saveas(a,'original_effect','jpg');
+saveas(aa,'plots_for_paper','jpg');
+saveas(aa1,'plots_for_paper_cue','jpg');
+saveas(aa2,'plots_for_paper_feed','jpg');
