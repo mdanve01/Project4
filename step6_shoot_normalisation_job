@@ -1,0 +1,13 @@
+%-----------------------------------------------------------------------
+% Job saved on 23-Nov-2022 21:37:59 by cfg_util (rev $Rev: 7345 $)
+% spm SPM - SPM12 (7771)
+% cfg_basicio BasicIO - Unknown
+%-----------------------------------------------------------------------
+matlabbatch{1}.spm.tools.shoot.norm.template = {'C:\Study_4\802\anat\Template_4.nii'};
+matlabbatch{1}.spm.tools.shoot.norm.data.subj.deformation = '<UNDEFINED>';
+matlabbatch{1}.spm.tools.shoot.norm.data.subj.images = '<UNDEFINED>';
+matlabbatch{1}.spm.tools.shoot.norm.vox = [1.5 1.5 1.5];
+matlabbatch{1}.spm.tools.shoot.norm.bb = [NaN NaN NaN
+                                          NaN NaN NaN];
+matlabbatch{1}.spm.tools.shoot.norm.preserve = 0;
+matlabbatch{1}.spm.tools.shoot.norm.fwhm = 4;
