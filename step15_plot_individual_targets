@@ -1,0 +1,228 @@
+clear all
+% load the variables of interest
+x = 39;
+y = -57;
+z = -37.5;
+
+% set the participant number
+clear sub
+sub = 803;
+
+% load up the main files if needed
+try 
+    max(max(max(intAll)));
+catch
+    % addpath /usr/local/apps/psycapps/spm/spm12-r7487;
+    
+    
+    % check the bfs
+    cd(strcat('C:/Study_4/',num2str(sub),'/1st_level/individual/combined'));
+    load('SPM.mat');
+    % set the window length and work out how many arbitrary units equate to 1
+    % second
+    window = SPM.xBF.length;
+    sec = length(SPM.xBF.bf(:,1)) ./ window;
+    % isolate the basis functions
+    hrf = SPM.xBF.bf;
+    clear SPM
+    
+    mkdir target
+    cd('target')
+    
+    % ORIGINAL
+    
+    % Single effects
+    d1 = niftiread(strcat('direction1.nii'));
+    d2 = niftiread(strcat('direction2.nii'));
+    d3 = niftiread(strcat('direction3.nii'));
+    
+    % load the con images for direction1
+    dir1.one = spm_vol('beta_0019.nii');
+    [dir1a,dir1XYZ1]=spm_read_vols(dir1.one);
+    dir1.two = spm_vol('beta_0020.nii');
+    [dir1b,dir1XYZ2]=spm_read_vols(dir1.two);
+    dir1.thr = spm_vol('beta_0021.nii');
+    [dir1c,dir1XYZ3]=spm_read_vols(dir1.thr);;
+
+    % load the con images for direction2
+    dir2.one = spm_vol('beta_0022.nii');
+    [dir2a,dir2XYZ1]=spm_read_vols(dir2.one);
+    dir2.two = spm_vol('beta_0023.nii');
+    [dir2b,dir2XYZ2]=spm_read_vols(dir2.two);
+    dir2.thr = spm_vol('beta_0024.nii');
+    [dir2c,dir2XYZ3]=spm_read_vols(dir2.thr);
+    
+    % load the con images for direction3
+    dir3.one = spm_vol('beta_0025.nii');
+    [dir3a,dir3XYZ1]=spm_read_vols(dir3.one);
+    dir3.two = spm_vol('beta_0026.nii');
+    [dir3b,dir3XYZ2]=spm_read_vols(dir3.two);
+    dir3.thr = spm_vol('beta_0027.nii');
+    [dir3c,dir3XYZ3]=spm_read_vols(dir3.thr);
+    
+       
+    cd(strcat('C:/Study_4/',num2str(sub),'/1st_level/individual/combined'));
+    % load the con images for baseline
+    base.one = spm_vol('con_0043.nii');
+    [basea,baseXYZ1]=spm_read_vols(base.one);
+
+    cd(strcat('C:/Study_4/',num2str(sub),'/1st_level/individual/combined/target'));
+    mkdir output
+    cd('output')
+    
+end
+
+
+% find the coordinate of interest
+clear coord
+coord = find(dir1XYZ1(1,:) == x & dir1XYZ1(2,:) == y & dir1XYZ1(3,:) == z);
+
+% check if contrasts are significant
+clear sig
+if d1(coord) > 0;
+    sig.d1 = 1
+else sig.d1 = 0;
+end
+if d2(coord) > 0;
+    sig.d2 = 1
+else sig.d2 = 0;
+end
+if d3(coord) > 0;
+    sig.d3 = 1
+else sig.d3 = 0;
+end
+
+
+clear full
+clear output
+output(:,1) = hrf(:,1) .* dir1a(coord);
+output(:,2) = hrf(:,2) .* dir1b(coord);
+output(:,3) = hrf(:,3) .* dir1c(coord);
+full(:,1) = output(:,1) + output(:,2) + output(:,3);
+clear output
+output(:,1) = hrf(:,1) .* dir2a(coord);
+output(:,2) = hrf(:,2) .* dir2b(coord);
+output(:,3) = hrf(:,3) .* dir2c(coord);
+full(:,2) = output(:,1) + output(:,2) + output(:,3);
+clear output
+output(:,1) = hrf(:,1) .* dir3a(coord);
+output(:,2) = hrf(:,2) .* dir3b(coord);
+output(:,3) = hrf(:,3) .* dir3c(coord);
+full(:,3) = output(:,1) + output(:,2) + output(:,3);
+
+% convert to percentage signal change
+clear n
+for n = 1:3;
+    full(:,n) = (full(:,n) ./ basea(coord)) .* 100;
+end
+
+clear maxi
+maxi(1) = max(max(full)) + (abs(max(max(full))) ./ 10);
+maxi(2) = min(min(full)) - (abs(min(min(full))) ./ 10);
+
+clear amplitudes
+% save peak amplitudes
+for n = 1:3;
+    amplitudes(n) = max(abs(full(:,n)));
+end
+
+a = figure(1);
+set(gcf,'Position',[60 60 1600 800]);
+plot(full(:,1),'LineWidth',3);
+hold on
+plot(full(:,2),'LineWidth',3);
+plot(full(:,3),'LineWidth',3);
+xbins = 0: (2*sec): (sec*window);
+set(gca, 'xtick', xbins);
+% set the x axis to seconds, and round up to the nearest second (2 decimal
+% places)
+xt = get(gca, 'XTick');                                 
+set(gca, 'XTick', xt, 'XTickLabel', round(xt/sec,2));
+ylim([maxi(2) maxi(1)]);
+xlabel('Time (secs)');
+ylabel('Percentage Signal Change');
+if sig.d1 == 1 & sig.d2 == 1 & sig.d3 == 1;
+    legend('Leftward Saccade: sig','Upward Saccade: sig','Rightward Saccade: sig');
+elseif sig.d1 == 0 & sig.d2 == 0 & sig.d3 == 0;
+    legend('Leftward Saccade: NS','Upward Saccade: NS','Rightward Saccade: NS');
+elseif sig.d1 == 1 & sig.d2 == 1 & sig.d3 == 0;
+    legend('Leftward Saccade: sig','Upward Saccade: sig','Rightward Saccade: NS');
+elseif sig.d1 == 1 & sig.d2 == 0 & sig.d3 == 1;
+    legend('Leftward Saccade: sig','Upward Saccade: NS','Rightward Saccade: sig');
+elseif sig.d1 == 0 & sig.d2 == 1 & sig.d3 == 1;
+    legend('Leftward Saccade: NS','Upward Saccade: sig','Rightward Saccade: sig');
+elseif sig.d1 == 0 & sig.d2 == 0 & sig.d3 == 1;
+    legend('Leftward Saccade: NS','Upward Saccade: NS','Rightward Saccade: sig');
+elseif sig.d1 == 0 & sig.d2 == 1 & sig.d3 == 0;
+    legend('Leftward Saccade: NS','Upward Saccade: sig','Rightward Saccade: NS');
+elseif sig.d1 == 1 & sig.d2 == 0 & sig.d3 == 0;
+    legend('Leftward Saccade: sig','Upward Saccade: NS','Rightward Saccade: NS');
+end
+title(strcat('x = ',num2str(x),', y = ',num2str(y),', z = ',num2str(z)));
+fontsize(a,scale=2);
+hold off
+
+
+% save as a table
+amplitudes = array2table(amplitudes, ...
+    'VariableNames',{'left','up','right'});
+
+% effects
+effects(1,1) = sig.d1;
+effects(1,2) = sig.d2;
+effects(1,3) = sig.d3;
+
+
+clear n
+for n = 1:3;
+    effects(2,n) = max(full(:,n));
+    effects(3,n) = min(full(:,n));
+end
+clear n
+effects(4,1) = x;
+effects(4,2) = y;
+effects(4,3) = z;
+
+% save as a table
+effects_table = array2table(effects, ...
+    'VariableNames',{'left','up','right'}, ...
+    'RowNames',{'Significance','Max','Min','Coordinates'});
+
+% also save betas
+beta_t(1,1) = dir1a(coord);
+beta_t(2,1) = dir1b(coord);
+beta_t(3,1) = dir1c(coord);
+beta_t(4,1) = abs(beta_t(1,1)) ./ (abs(beta_t(1,1)) + abs(beta_t(2,1)) + abs(beta_t(3,1)));
+beta_t(5,1) = abs(beta_t(2,1)) ./ (abs(beta_t(1,1)) + abs(beta_t(2,1)) + abs(beta_t(3,1)));
+beta_t(6,1) = abs(beta_t(3,1)) ./ (abs(beta_t(1,1)) + abs(beta_t(2,1)) + abs(beta_t(3,1)));
+
+beta_t(1,2) = dir2a(coord);
+beta_t(2,2) = dir2b(coord);
+beta_t(3,2) = dir2c(coord);
+beta_t(4,2) = abs(beta_t(1,2)) ./ (abs(beta_t(1,2)) + abs(beta_t(2,2)) + abs(beta_t(3,2)));
+beta_t(5,2) = abs(beta_t(2,2)) ./ (abs(beta_t(1,2)) + abs(beta_t(2,2)) + abs(beta_t(3,2)));
+beta_t(6,2) = abs(beta_t(3,2)) ./ (abs(beta_t(1,2)) + abs(beta_t(2,2)) + abs(beta_t(3,2)));
+
+beta_t(1,3) = dir3a(coord);
+beta_t(2,3) = dir3b(coord);
+beta_t(3,3) = dir3c(coord);
+beta_t(4,3) = abs(beta_t(1,3)) ./ (abs(beta_t(1,3)) + abs(beta_t(2,3)) + abs(beta_t(3,3)));
+beta_t(5,3) = abs(beta_t(2,3)) ./ (abs(beta_t(1,3)) + abs(beta_t(2,3)) + abs(beta_t(3,3)));
+beta_t(6,3) = abs(beta_t(3,3)) ./ (abs(beta_t(1,3)) + abs(beta_t(2,3)) + abs(beta_t(3,3)));
+
+
+
+% save as a table
+beta_table = array2table(beta_t, ...
+    'VariableNames',{'Left','Up','Right'}, ...
+    'RowNames',{'Canonical','Temp_Derv','Disp_Derv','Can_prop','TD_prop','DD_prop'});
+
+
+
+
+% save the relevant
+mkdir(strcat('coordinate_',num2str(x),'_',num2str(y),'_',num2str(z)));
+cd(strcat('C:/Study_4/1st_level/individual/combined/target/output/coordinate_',num2str(x),'_',num2str(y),'_',num2str(z)));
+save effects_table effects_table
+save beta_table beta_table
+saveas(a,'original_effect','jpg');
