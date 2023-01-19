@@ -1,0 +1,562 @@
+clear all
+
+%%%%%%%%%%%%%%%%%%
+% EDIT THESE %
+subject = [803 804 808 809 811 812 815 820 823];
+%%%%%%%%%%%%%%%%%%
+
+for sub = 1:length(subject);
+
+    cd(strcat('C:/Study_4/',num2str(subject(sub)),'/epi'));
+    
+    path = ('C:/Study_4/quality_control');
+    
+    path1 = strcat('C:/Study_4/',num2str(subject(sub)),'/1st_level/individual/cue');
+
+    path1f = strcat('C:/Study_4/',num2str(subject(sub)),'/1st_level/individual/feedback');
+    
+    path2 = strcat('C:/Study_4/',num2str(subject(sub)));
+    
+    path3 = strcat('C:/Study_4/',num2str(subject(sub)),'/quality_control');
+    
+    % select the file folder
+    fileFolder = fullfile(pwd);
+    
+    % head motion
+    clear rpar
+    clear rpara
+    rpar = dir(fullfile('rp_f*'));
+    rpara = {rpar.name};
+    clear rp
+    rp = importdata(rpara{1});
+    
+    % find all files starting with the wildcard (remember if asterisk either
+    % side this will find it anywhere)
+    clear files
+    clear files2
+    files = dir(fullfile(fileFolder, 'fF7T_*'));
+    files2 = dir(fullfile(fileFolder, 'sufF7T_*'));
+    % save these names in a separate folder
+    fileNames = {files.name};
+    fileNames2 = {files2.name};
+    % delete the .mat file
+    clear tf
+    tf = endsWith(fileNames,".mat");
+    fileNames(find(tf == 1)) = [];
+    clear tf
+    tf = endsWith(fileNames2,".mat");
+    fileNames2(find(tf == 1)) = [];
+    
+    clear a
+    clear a2
+    for n = 1:length(fileNames2);
+        % isolate and read the nifti file
+        clear fname
+        clear fname2
+        fname = fileNames{n};
+        fname2 = fileNames2{n};
+        % save this as a data matrix with n as the 4th dimension
+        a(:,:,:,n) = niftiread(fname);
+        a2(:,:,:,n) = niftiread(fname2);
+    end
+    
+    % load design file
+    cd(path2)
+    load('design2.mat');
+    
+    % get volumes, we have 4D data (128 x 128 x 96 x n), here I calculate the mean slice values (1:96) at volume n
+    clear slicemean
+    clear slicemean2
+    clear v
+    for v = 1:length(a(1,1,1,:));
+        clear s
+        for s = 1:length(a(1,1,:,1));
+            slicemean2(s,v) = mean(mean(a2(:,:,s,v)));
+            slicemean(s,v) = mean(mean(a(:,:,s,v)));
+        end
+    end
+    
+    clear slicemean_normV
+    clear slicemean_normV2
+    clear slicemean_normS
+    clear slicemean_normS2
+    % looks at each value in slicemean one volume at a time, and subtracts the mean of that volume,
+    % to normalise the scores (so the mean value = 0)
+    clear v
+    for v = 1:length(slicemean(1,:));
+        slicemean_normV(:,v) = slicemean(:,v) - mean(slicemean(:,v));
+        slicemean_normV2(:,v) = slicemean2(:,v) - mean(slicemean2(:,v));
+    end
+    
+    % repeats normalising slices
+    for s = 1:length(slicemean(:,1));
+        slicemean_normS(s,:) = slicemean(s,:) - mean(slicemean(s,:));
+        slicemean_normS2(s,:) = slicemean2(s,:) - mean(slicemean2(s,:));
+    end
+    
+    clear slicemean_fft
+    clear slicemean_fft2
+    % fast fourier transform
+    slicemean_fft = (abs(fft(slicemean_normS')))';
+    slicemean_fft2 = (abs(fft(slicemean_normS2')))';
+    
+    
+    
+    clear measure
+    % looks at each slice, and calculates change from one volume to the next.
+    % Then calculates the maximum shift for this subject
+    clear n
+    for n = 1:length(slicemean(:,1));
+        clear m
+        for m = 2:length(slicemean(1,:));
+            measure.temp.shift.data(n,m-1) = abs(slicemean(n,m) - slicemean(n,m-1));
+            measure.temp.shift.data2(n,m-1) = abs(slicemean2(n,m) - slicemean2(n,m-1));
+        end
+        measure.temp.cov.data(n) = std(slicemean(n,:)) ./ mean(slicemean(n,:));
+        measure.temp.cov.data2(n) = std(slicemean2(n,:)) ./ mean(slicemean2(n,:));
+    end
+    measure.temp.shift.max = max(max(measure.temp.shift.data));
+    measure.temp.cov.max = max(measure.temp.cov.data);
+    measure.temp.shift.max2 = max(max(measure.temp.shift.data2));
+    measure.temp.cov.max2 = max(measure.temp.cov.data2);
+    
+    % does the same over slices within volumes
+    clear n
+    for n = 1:length(slicemean(1,:));
+        clear m
+        for m = 2:length(slicemean(:,1));
+            measure.spat.shift.data(m-1,n) = abs(slicemean(m,n) - slicemean(m-1,n));
+            measure.spat.shift.data2(m-1,n) = abs(slicemean2(m,n) - slicemean2(m-1,n));
+        end
+        measure.spat.cov.data(n) = std(slicemean(:,n)) ./ mean(slicemean(:,n));
+        measure.spat.cov.data2(n) = std(slicemean2(:,n)) ./ mean(slicemean2(:,n));
+    end
+    measure.spat.shift.max = max(max(measure.spat.shift.data));
+    measure.spat.cov.max = max(measure.spat.cov.data);
+    measure.spat.shift.max2 = max(max(measure.spat.shift.data2));
+    measure.spat.cov.max2 = max(measure.spat.cov.data2);
+    
+    % save the relevant
+    cd(path);
+    b = figure(1);
+    set(b, 'Visible', 'off');
+    
+    subplot(3,1,1);
+    imagesc(slicemean_normV);
+    hold on
+    colorbar
+    title('slicemean normalised volumes');
+    xlabel('volumes');
+    ylabel('slices');
+    hold off
+    
+    subplot(3,1,2);
+    imagesc(slicemean_normS);
+    hold on
+    colorbar
+    title('slicemean normalised slices');
+    xlabel('volumes');
+    ylabel('slices');
+    hold off
+    
+    subplot(3,1,3);
+    imagesc(slicemean_fft);
+    hold on
+    colorbar
+    title('fast fourier transformation');
+    xlabel('volumes');
+    ylabel('slices');
+    hold off
+    
+    jpgName = strcat('quality_control_sub_',num2str(subject(sub)),'.jpg');
+    saveas(b,sprintf(jpgName,1));
+    
+    
+    % save the relevant
+    cd(path);
+    d = figure(2);
+    set(d, 'Visible', 'off');
+    
+    subplot(3,1,1);
+    imagesc(slicemean_normV2);
+    hold on
+    colorbar
+    title('slicemean normalised volumes');
+    xlabel('volumes');
+    ylabel('slices');
+    hold off
+    
+    subplot(3,1,2);
+    imagesc(slicemean_normS2);
+    hold on
+    colorbar
+    title('slicemean normalised slices');
+    xlabel('volumes');
+    ylabel('slices');
+    hold off
+    
+    subplot(3,1,3);
+    imagesc(slicemean_fft2);
+    hold on
+    colorbar
+    title('fast fourier transformation');
+    xlabel('volumes');
+    ylabel('slices');
+    hold off
+    
+    jpgName = strcat('quality_control_sub_',num2str(subject(sub)),'_suf.jpg');
+    saveas(d,sprintf(jpgName,1));
+    
+    cd(path2)
+    try
+        cd(strcat(path2,'/quality_control'));
+    catch
+        mkdir quality_control
+        cd(strcat(path2,'/quality_control'));
+    end
+
+    measure.all = [measure.temp.shift.max measure.temp.cov.max measure.spat.shift.max ...
+        measure.spat.cov.max];
+    measure.all2 = [measure.temp.shift.max2 measure.temp.cov.max2 measure.spat.shift.max2 ...
+        measure.spat.cov.max2];
+    
+    save output measure
+    
+    
+    
+    
+    
+    clear hm
+    hm.x = rp(:,1);
+    hm.y = rp(:,2);
+    hm.z = rp(:,3);
+    hm.pitch = rp(:,4) .* 57.2957795;
+    hm.roll = rp(:,5) .* 57.2957795;
+    hm.yaw = rp(:,6) .* 57.2957795;
+    
+    
+    if subject(sub) ~= 812 & subject(sub) ~= 823;
+        clear x
+        % now work out the shaded areas to denote break periods/calibrations
+        x = [round(design.cal_times(1,1)./1.76), round(design.cal_times(2,1)./1.76),...
+            round(design.cal_times(3,1)./1.76), round(design.cal_times(4,1)./1.76);...
+            round(design.cal_times(1,2)./1.76), round(design.cal_times(2,2)./1.76),...
+            round(design.cal_times(3,2)./1.76), round(design.cal_times(4,2)./1.76);...
+            round(design.cal_times(1,2)./1.76), round(design.cal_times(2,2)./1.76),...
+            round(design.cal_times(3,2)./1.76), round(design.cal_times(4,2)./1.76);...
+            round(design.cal_times(1,1)./1.76), round(design.cal_times(2,1)./1.76),...
+            round(design.cal_times(3,1)./1.76), round(design.cal_times(4,1)./1.76)];
+        
+        % delete these from the run
+        hm.x2 = rp(:,1);
+        clear nn
+        for nn = 1:4;
+            hm.x2(x(1,nn):x(2,nn)) = 999;
+        end
+        hm.x2(find(hm.x2 == 999)) = [];
+        hm.y2 = rp(:,2);
+        clear nn
+        for nn = 1:4;
+            hm.y2(x(1,nn):x(2,nn)) = 999;
+        end
+        hm.y2(find(hm.y2 == 999)) = [];
+        hm.z2 = rp(:,3);
+        clear nn
+        for nn = 1:4;
+            hm.z2(x(1,nn):x(2,nn)) = 999;
+        end
+        hm.z2(find(hm.z2 == 999)) = [];
+        hm.pitch2 = rp(:,4) .* 57.2957795;
+        clear nn
+        for nn = 1:4;
+            hm.pitch2(x(1,nn):x(2,nn)) = 999;
+        end
+        hm.pitch2(find(hm.pitch2 == 999)) = [];
+        hm.roll2 = rp(:,5) .* 57.2957795;
+        clear nn
+        for nn = 1:4;
+            hm.roll2(x(1,nn):x(2,nn)) = 999;
+        end
+        hm.roll2(find(hm.roll2 == 999)) = [];
+        hm.yaw2 = rp(:,6) .* 57.2957795;
+        clear nn
+        for nn = 1:4;
+            hm.yaw2(x(1,nn):x(2,nn)) = 999;
+        end
+        hm.yaw2(find(hm.yaw2 == 999)) = [];
+        
+        clear low
+        clear high
+        clear y_x
+        clear y_r
+        low.x = min([min(hm.x) min(hm.y) min(hm.z)]);
+        low.r = min([min(hm.pitch) min(hm.roll) min(hm.yaw)]);
+        high.x = max([max(hm.x) max(hm.y) max(hm.z)]);
+        high.r = max([max(hm.pitch) max(hm.roll) max(hm.yaw)]);
+        y_x = [low.x low.x low.x low.x; low.x low.x low.x low.x; high.x high.x high.x high.x; high.x high.x high.x high.x];
+        y_r = [low.r low.r low.r low.r; low.r low.r low.r low.r; high.r high.r high.r high.r; high.r high.r high.r high.r];
+    else
+        clear x
+        % now work out the shaded areas to denote break periods/calibrations
+        x = [round(design.cal_times(1,1)./1.76), round(design.cal_times(2,1)./1.76),...
+            round(design.cal_times(3,1)./1.76);...
+            round(design.cal_times(1,2)./1.76), round(design.cal_times(2,2)./1.76),...
+            round(design.cal_times(3,2)./1.76);...
+            round(design.cal_times(1,2)./1.76), round(design.cal_times(2,2)./1.76),...
+            round(design.cal_times(3,2)./1.76);...
+            round(design.cal_times(1,1)./1.76), round(design.cal_times(2,1)./1.76),...
+            round(design.cal_times(3,1)./1.76)];
+        
+        % delete these from the run
+        hm.x2 = rp(:,1);
+        clear nn
+        for nn = 1:3;
+            hm.x2(x(1,nn):x(2,nn)) = 999;
+        end
+        hm.x2(find(hm.x2 == 999)) = [];
+        hm.y2 = rp(:,2);
+        clear nn
+        for nn = 1:3;
+            hm.y2(x(1,nn):x(2,nn)) = 999;
+        end
+        hm.y2(find(hm.y2 == 999)) = [];
+        hm.z2 = rp(:,3);
+        clear nn
+        for nn = 1:3;
+            hm.z2(x(1,nn):x(2,nn)) = 999;
+        end
+        hm.z2(find(hm.z2 == 999)) = [];
+        hm.pitch2 = rp(:,4) .* 57.2957795;
+        clear nn
+        for nn = 1:3;
+            hm.pitch2(x(1,nn):x(2,nn)) = 999;
+        end
+        hm.pitch2(find(hm.pitch2 == 999)) = [];
+        hm.roll2 = rp(:,5) .* 57.2957795;
+        clear nn
+        for nn = 1:3;
+            hm.roll2(x(1,nn):x(2,nn)) = 999;
+        end
+        hm.roll2(find(hm.roll2 == 999)) = [];
+        hm.yaw2 = rp(:,6) .* 57.2957795;
+        clear nn
+        for nn = 1:3;
+            hm.yaw2(x(1,nn):x(2,nn)) = 999;
+        end
+        hm.yaw2(find(hm.yaw2 == 999)) = [];
+        
+        clear low
+        clear high
+        clear y_x
+        clear y_r
+        low.x = min([min(hm.x) min(hm.y) min(hm.z)]);
+        low.r = min([min(hm.pitch) min(hm.roll) min(hm.yaw)]);
+        high.x = max([max(hm.x) max(hm.y) max(hm.z)]);
+        high.r = max([max(hm.pitch) max(hm.roll) max(hm.yaw)]);
+        y_x = [low.x low.x low.x; low.x low.x low.x; high.x high.x high.x; high.x high.x high.x];
+        y_r = [low.r low.r low.r; low.r low.r low.r; high.r high.r high.r; high.r high.r high.r];
+    end
+
+    
+    cd(path);
+    
+    c = figure(3);
+    set(c, 'Visible', 'off');
+    
+    subplot(2,1,1)
+    plot(hm.x);
+    hold on
+    plot(hm.y);
+    plot(hm.z);
+    xlabel('scans');
+    ylabel('mm');
+    ylim([low.x high.x]);
+    xlim([0 n+250]);
+    patch(x,y_x,'red','FaceAlpha',.25,'EdgeColor','none');
+    legend('x','y','z','breaks');
+    hold off
+    subplot(2,1,2)
+    plot(hm.pitch);
+    hold on
+    plot(hm.roll);
+    plot(hm.yaw);
+    xlabel('scans');
+    ylabel('degrees');
+    ylim([low.r high.r]);
+    xlim([0 n+250]);
+    patch(x,y_r,'red','FaceAlpha',.25,'EdgeColor','none');
+    legend('pitch','roll','yaw','breaks');
+    hold off
+    
+    jpgName = strcat('realignment_parameters_sub_',num2str(subject(sub)),'.jpg');
+    saveas(c,sprintf(jpgName,1));
+    
+    e = figure(4);
+    set(e, 'Visible', 'off');
+    
+    subplot(2,1,1)
+    plot(hm.x2);
+    hold on
+    plot(hm.y2);
+    plot(hm.z2);
+    xlabel('scans (breaks removed)');
+    ylabel('mm');
+    ylim([low.x high.x]);
+    xlim([0 n+250]);
+    legend('x','y','z');
+    hold off
+    subplot(2,1,2)
+    plot(hm.pitch2);
+    hold on
+    plot(hm.roll2);
+    plot(hm.yaw2);
+    xlabel('scans (breaks removed)');
+    ylabel('degrees');
+    ylim([low.r high.r]);
+    xlim([0 n+250]);
+    legend('pitch','roll','yaw');
+    hold off
+    
+    jpgName = strcat('realignment_parameters_sub_',num2str(subject(sub)),'_breaks_removed.jpg');
+    saveas(e,sprintf(jpgName,1));
+    
+    
+    
+    % calculate range
+    hm.range(1,1) = range(hm.x);
+    % calculate scan to scan shift
+    clear run
+    for n = 2:length(hm.x);
+        run(n-1) = hm.x(n) - hm.x(n-1);
+    end
+    hm.jump(1,1) = max(abs(run));
+    
+    hm.range(1,2) = range(hm.y);
+    clear run
+    for n = 2:length(hm.y);
+        run(n-1) = hm.y(n) - hm.y(n-1);
+    end
+    hm.jump(1,2) = max(abs(run));
+    
+    hm.range(1,3) = range(hm.z);
+    clear run
+    for n = 2:length(hm.z);
+        run(n-1) = hm.z(n) - hm.z(n-1);
+    end
+    hm.jump(1,3) = max(abs(run));
+    
+    hm.range(1,4) = range(hm.pitch);
+    clear run
+    for n = 2:length(hm.pitch);
+        run(n-1) = hm.pitch(n) - hm.pitch(n-1);
+    end
+    hm.jump(1,4) = max(abs(run));
+    
+    hm.range(1,5) = range(hm.roll);
+    clear run
+    for n = 2:length(hm.roll);
+        run(n-1) = hm.roll(n) - hm.roll(n-1);
+    end
+    hm.jump(1,5) = max(abs(run));
+    
+    hm.range(1,6) = range(hm.yaw);
+    clear run
+    for n = 2:length(hm.yaw);
+        run(n-1) = hm.yaw(n) - hm.yaw(n-1);
+    end
+    hm.jump(1,6) = max(abs(run));
+    
+    
+    
+    % calculate range without breaks
+    hm.range2(1,1) = range(hm.x2);
+    % calculate scan to scan shift
+    clear run2
+    for n = 2:length(hm.x2);
+        run2(n-1) = hm.x2(n) - hm.x2(n-1);
+    end
+    hm.jump2(1,1) = max(abs(run2));
+    
+    hm.range2(1,2) = range(hm.y2);
+    clear run2
+    for n = 2:length(hm.y2);
+        run2(n-1) = hm.y2(n) - hm.y2(n-1);
+    end
+    hm.jump2(1,2) = max(abs(run2));
+    
+    hm.range2(1,3) = range(hm.z2);
+    clear run2
+    for n = 2:length(hm.z2);
+        run2(n-1) = hm.z2(n) - hm.z2(n-1);
+    end
+    hm.jump2(1,3) = max(abs(run2));
+    
+    hm.range2(1,4) = range(hm.pitch2);
+    clear run2
+    for n = 2:length(hm.pitch2);
+        run2(n-1) = hm.pitch2(n) - hm.pitch2(n-1);
+    end
+    hm.jump2(1,4) = max(abs(run2));
+    
+    hm.range2(1,5) = range(hm.roll2);
+    clear run2
+    for n = 2:length(hm.roll2);
+        run2(n-1) = hm.roll2(n) - hm.roll2(n-1);
+    end
+    hm.jump2(1,5) = max(abs(run2));
+    
+    hm.range2(1,6) = range(hm.yaw2);
+    clear run2
+    for n = 2:length(hm.yaw2);
+        run2(n-1) = hm.yaw2(n) - hm.yaw2(n-1);
+    end
+    hm.jump2(1,6) = max(abs(run2));
+    
+    cd(path3);
+    save hm hm
+
+    % check cue correlations in the cue specific analysis
+    clear corr
+    cd(path1);
+    load('SPM.mat');
+    corr = corrcoef(SPM.xX.X);
+    for n = 1:length(corr(:,1));
+        corr(n,n) = 0;
+    end
+    clear correlations
+    correlations.cue = max(max(abs(corr(1:12,:))));
+    % check target correlations in the cue specific analysis
+    correlations.targ_cue = max(max(abs(corr(19:27,:))));
+
+    % check target correlations in the feed specific analysis 
+    clear corr
+    cd(path1f);
+    load('SPM.mat');
+    corr = corrcoef(SPM.xX.X);
+    for n = 1:length(corr(:,1));
+        corr(n,n) = 0;
+    end
+    correlations.targ_feed = max(max(abs(corr(19:27,:))));
+    % check feedback correlations in the feed specific analysis 
+    correlations.feed = max(max(abs(corr(1:12,:))));
+    
+    % make a file of all
+    clear file_all
+    file_all(1,1:4) = measure.all;
+    file_all(1,5:10) = hm.range;
+    file_all(1,11:16) = hm.jump;
+    file_all(17) = correlations.cue;
+    file_all(18) = correlations.targ_cue;
+    file_all(19) = correlations.targ_feed;
+    file_all(20) = correlations.feed;
+
+    clear file_all2
+    file_all2(1,1:4) = measure.all2;
+    file_all2(1,5:10) = hm.range2;
+    file_all2(1,11:16) = hm.jump2;
+    
+    cd(path3)
+    save file_all file_all
+    save file_all2 file_all2
+
+end
